@@ -157,7 +157,7 @@ class JessCompiler {
 					'attributes' => $attributes,
 					'full_call' => $call[0],
 					'import_dir' => $this->importDir
-				));
+				), $this);
 			}
 		}
 
@@ -305,7 +305,7 @@ class JessJsObject {
  *
  * @return {String} Compiled Javascript
  */
-	public static function js_require($settings) {
+	public static function js_require($settings, JessCompiler $jessc) {
 		if (!isset($settings['attributes'][0])) {
 			throw new Exception('JessCompiler Error: Require cannot have 0 arguments');
 		} elseif ($settings['attributes'][0]['type'] != 'string') {
@@ -325,7 +325,7 @@ class JessJsObject {
 		//Loop threw all import directories to search for the required file
 		foreach ($settings['import_dir'] as $dir) {
 			if (file_exists($dir . $fileName)) {
-				$file = file_get_contents($dir . $fileName);
+				$file = $jessc->compile(file_get_contents($dir . $fileName));
 
 				$string = str_replace($settings['full_call'], $file, $string);
 
