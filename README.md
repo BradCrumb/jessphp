@@ -9,11 +9,13 @@ At this time the only supported method is `jess.require`. With the jess.require 
 
 You can use it in normal Javascript syntax.
 
-	jess.require('include.jess');			//includes the contents of include.jess in the same directory
+```javascript
+jess.require('include.jess');			//includes the contents of include.jess in the same directory
 
-	jess.require('inc/functions.jess');		//includes the contents of include.jess in from the "inc" directory
+jess.require('inc/functions.jess');		//includes the contents of include.jess in from the "inc" directory
 
-	jess.require('include');				//the jess extension is not required
+jess.require('include');				//the jess extension is not required
+```
 
 ## How to use in your PHP project
 
