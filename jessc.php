@@ -5,7 +5,11 @@
  * Jessphp is a Javascript compiler that adds extra functionality to your javascript code.
  * For example it gives you Javascript requires and compiles them to a merged Javacript file
  *
- * @author Marc-Jan Barnhoorn
+ * @author Patrick Langendoen <github-bradcrumb@patricklangendoen.nl>
+ * @author Marc-Jan Barnhoorn <github-bradcrumb@marc-jan.nl>
+ * @copyright 2013 (c), Patrick Langendoen & Marc-Jan Barnhoorn
+ * @package JessCompiler
+ * @license http://opensource.org/licenses/GPL-3.0 GNU GENERAL PUBLIC LICENSE
  */
 class JessCompiler {
 
