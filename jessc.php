@@ -348,6 +348,7 @@ class JessJsObject {
 			throw new Exception("JessCompiler Error: Require only accepts 1 argument");
 		}
 
+		//Check if we already loaded the module, to prevent recursion problems
 		if (in_array($settings['attributes'][0]['value'], $this->__loadedModules)) {
 			return;
 		}
@@ -393,16 +394,9 @@ class JessJsObject {
 			//Get the Jess object template
 			$jessObject = file_get_contents(__DIR__ . '/jess.js');
 
-			/*$modules = "{\n";
-
-			foreach ($this->__modules as $name => $content) {
-				$modules .= "\t\t\"{$name}\": function() {\n\t\t\treturn {$content};\t\t}\n";
-			}
-
-			$modules .= "}";*/
-
 			$modules = "";
 
+			//Define all the modules
 			foreach ($this->__modules as $name => $content) {
 				$modules .= "jess.define('{$name}', function() {\n{$content}\n});";
 			}
