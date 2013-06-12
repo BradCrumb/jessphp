@@ -16,6 +16,13 @@ class JessCompiler {
 	public $importDir = '';
 
 /**
+ * Instance of the JessJsObject
+ *
+ * @var {JessJsObject}
+ */
+	private $__jessJsObject = null;
+
+/**
  * Constructor
  */
 	public function __construct() {
@@ -110,7 +117,8 @@ class JessCompiler {
 		$this->allParsedFiles = array();
 		$this->_addParsedFile($fname);
 
-		$out = $this->compile(file_get_contents($fname), $fname);
+		$out = $this->compile(file_get_contents($fname));
+		$out = $this->__jessJsObject->generateJessObject() . $out;
 
 		$this->importDir = $oldImport;
 
@@ -128,7 +136,13 @@ class JessCompiler {
  *
  * @return {String} Compiled string
  */
-	public function compile($string, $name = null) {
+	public function compile($string, JessJsObject $jessJsObject = null) {
+		if (!$jessJsObject) {
+			$jessJsObject = new JessJsObject();
+		}
+
+		$this->__jessJsObject = $jessJsObject;
+
 		$out = $this->__compileFunctions($string);
 
 		return $out;
@@ -151,8 +165,8 @@ class JessCompiler {
 
 			$attributes = $this->__parseFunctionArguments($call[2]);
 
-			if (method_exists('JessJsObject', $methodName)) {
-				$string = JessJsObject::{$methodName}(array(
+			if (method_exists($this->__jessJsObject, $methodName)) {
+				$this->__jessJsObject->{$methodName}(array(
 					'string' => $string,
 					'attributes' => $attributes,
 					'full_call' => $call[0],
@@ -291,6 +305,26 @@ class JessCompiler {
 class JessJsObject {
 
 /**
+ * Loaded Modules
+ *
+ * @var {array}
+ */
+	private $__modules = array();
+
+/**
+ * Loaded Modules
+ *
+ * @var {array}
+ */
+	private $__loadedModules = array();
+
+/**
+ * Constructor
+ */
+	public function __construct() {
+	}
+
+/**
  * Require another JESS file
  *
  * @example
@@ -305,7 +339,7 @@ class JessJsObject {
  *
  * @return {String} Compiled Javascript
  */
-	public static function js_require($settings, JessCompiler $jessc) {
+	public function js_require($settings, JessCompiler $jessc) {
 		if (!isset($settings['attributes'][0])) {
 			throw new Exception('JessCompiler Error: Require cannot have 0 arguments');
 		} elseif ($settings['attributes'][0]['type'] != 'string') {
@@ -313,6 +347,12 @@ class JessJsObject {
 		} elseif (count($settings['attributes']) > 1) {
 			throw new Exception("JessCompiler Error: Require only accepts 1 argument");
 		}
+
+		if (in_array($settings['attributes'][0]['value'], $this->__loadedModules)) {
+			return;
+		}
+
+		$this->__loadedModules[] = $settings['attributes'][0]['value'];
 
 		$fileName = $settings['attributes'][0]['value'];
 
@@ -325,9 +365,7 @@ class JessJsObject {
 		//Loop threw all import directories to search for the required file
 		foreach ($settings['import_dir'] as $dir) {
 			if (file_exists($dir . $fileName)) {
-				$file = $jessc->compile(file_get_contents($dir . $fileName));
-
-				$string = str_replace($settings['full_call'], $file, $string);
+				$file = $jessc->compile(file_get_contents($dir . $fileName), $this);
 
 				break;
 			}
@@ -337,6 +375,40 @@ class JessJsObject {
 			throw new Exception('JessCompiler Error: Cannot require "' . $fileName . '"');
 		}
 
-		return $string;
+		$this->__modules[$settings['attributes'][0]['value']] = $file;
+	}
+
+/**
+ * Generate the Jess Object for Javascript
+ * ---
+ *
+ * This method generates the Jess object so the used functions will work on the client.
+ * It greps all the required modules and embeds them in the object.
+ *
+ * @return {mixed} Generated Jess object
+ */
+	public function generateJessObject() {
+		//Compile the Modules into the jess object
+		if (count($this->__modules) > 0) {
+			//Get the Jess object template
+			$jessObject = file_get_contents(__DIR__ . '/jess.js');
+
+			/*$modules = "{\n";
+
+			foreach ($this->__modules as $name => $content) {
+				$modules .= "\t\t\"{$name}\": function() {\n\t\t\treturn {$content};\t\t}\n";
+			}
+
+			$modules .= "}";*/
+
+			$modules = "";
+
+			foreach ($this->__modules as $name => $content) {
+				$modules .= "jess.define('{$name}', function() {\n{$content}\n});";
+			}
+
+			return str_replace('<modules>', $modules, $jessObject) . "\n";
+		}
+		return null;
 	}
 }
